@@ -311,7 +311,7 @@ def used_opts(kJobname, kNameSpace, kYaml, kVname,
           "\tVolume Name: %s \n"
           "\tHost path: %s \n"
           "\tContainer Path: %s \n"
-          "\tVolume Sub Path: %s "
+          "\tVolume Sub Path: %s \n"
           "\tPersistentVolumeClaim: %s \n"
           "\tCommands: %s \n"
           "\tArgs: %s \n"
@@ -356,6 +356,7 @@ def main(argv):
     #   r|restartpolicy     default is Never
     #   s|imagesecret       name of image_pull_secret
     #   t|volpath           Volume mount path in Pod
+    #   q|volsubpath        Volume mount sub_path in Volume
     #   v|envvalue          variable value
     #   y|yaml              name of a yaml manifest for job creation. Overrides all others except jobname
     #
