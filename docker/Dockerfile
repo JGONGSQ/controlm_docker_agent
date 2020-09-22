@@ -52,9 +52,10 @@ RUN  yum -y install wget \
 		&& curl --silent --location https://rpm.nodesource.com/setup_12.x | bash - \
 		&& yum -y install nodejs \
 		&& node -v \
-		&& npm -v \
+		&& npm -v
+
 # install aapi CLI
-		&& wget --no-check-certificate $AAPI_END_POINT/ctm-cli.tgz \
+RUN		wget --no-check-certificate $AAPI_END_POINT/ctm-cli.tgz \
 		&& npm install -g ctm-cli.tgz \
 		&& ctm -v \
 		&& rm -rf $AAPI_END_POINT/ctm-cli.tgz \
@@ -69,12 +70,14 @@ RUN  yum -y install wget \
 USER controlm
 WORKDIR /home/controlm
 
+
 # Create AAPI env
 RUN ctm env add myenv $AAPI_END_POINT $AAPI_USER $AAPI_PASS \
 # install java 8
 		&& sudo yum -y install java-1.8.0-openjdk-headless \
         && java -version \
 # install agent, setup will be done during statup
+		&& ctm provision images Linux \
 		&& ctm provision image $AGENT_IMAGE_NAME && echo installation ended successfully \
 # clean
 		&& sudo yum -y autoremove java-1.8.0-openjdk-headless \
