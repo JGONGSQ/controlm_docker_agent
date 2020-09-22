@@ -79,7 +79,7 @@ def get_name_from_yaml_single_item(yml_object, verbose=False):
 
 
 def create_job_object(kJob, kImage, kVname, kVvalue, kimagepullpolicy, kimagepullsecret, krestartpolicy,
-                      kbackofflimit, khostpath, kvolname, kvolpath, kpvolclaim, kcommands, kargs):
+                      kbackofflimit, khostpath, kvolname, kvolpath, kvolsubpath, kpvolclaim, kcommands, kargs):
     # This creates a job object dynamically but supports only limited parameters
     # If you need any characteristics nt supported here, use a yaml manifest
     #
@@ -93,11 +93,21 @@ def create_job_object(kJob, kImage, kVname, kVvalue, kimagepullpolicy, kimagepul
 
     # Configure Volume Devices and Mounts
     volnames_list = []
-    if kvolname != 'none':
-       volname = client.V1VolumeMount(
-          name=kvolname,
-          mount_path=kvolpath)
-       volnames_list.append(volname)
+    # if kvolname != 'none':
+    #    volname = client.V1VolumeMount(
+    #       name=kvolname,
+    #       mount_path=kvolpath)
+    #    volnames_list.append(volname)
+
+    for key in kvolname:
+        volpath = kvolpath[kvolname.index(key)]
+        volsubpath = kvolsubpath[kvolname.index(key)]
+        volname = client.V1VolumeMount(
+            name=key,
+            mount_path=volpath,
+            sub_path=volsubpath
+        )
+        volnames_list.append(volname)
 
     # Configure Volumes list
     vol_list = []
@@ -286,7 +296,7 @@ def used_opts(kJobname, kNameSpace, kYaml, kVname,
     kVvalue, kImagename, kimagepullpolicy,
     kimagepullsecret, krestartpolicy,
     kbackofflimit, khostpath,
-    kvolname, kvolpath, kpvolclaim, kcommands, kargs):
+    kvolname, kvolpath, kvolsubpath, kpvolclaim, kcommands, kargs):
 
     print("Command line options specified:")
     print("\tjobname: %s \n"
@@ -301,6 +311,7 @@ def used_opts(kJobname, kNameSpace, kYaml, kVname,
           "\tVolume Name: %s \n"
           "\tHost path: %s \n"
           "\tContainer Path: %s \n"
+          "\tVolume Sub Path: %s "
           "\tPersistentVolumeClaim: %s \n"
           "\tCommands: %s \n"
           "\tArgs: %s \n"
@@ -309,7 +320,7 @@ def used_opts(kJobname, kNameSpace, kYaml, kVname,
              kVvalue, kImagename, kimagepullpolicy,
              kimagepullsecret, krestartpolicy,
              kbackofflimit, kvolname, khostpath,
-             kvolpath, kpvolclaim, kcommands, kargs, kYaml))
+             kvolpath, kvolsubpath, kpvolclaim, kcommands, kargs, kYaml))
 
 
 def main(argv):
@@ -325,8 +336,9 @@ def main(argv):
     krestartpolicy = 'Never'
     kbackofflimit = 0
     khostpath = 'none'
-    kvolname = 'none'
-    kvolpath = 'none'
+    kvolname = []
+    kvolpath = []
+    kvolsubpath = []
     kcommands = []
     kargs = []
 
@@ -348,70 +360,75 @@ def main(argv):
     #   y|yaml              name of a yaml manifest for job creation. Overrides all others except jobname
     #
     try:
-       opts, args = getopt.getopt(argv, "hj:c:i:e:v:y:p:s:r:b:H:m:t:a:k:",
-                                  ["jobname=","claim=", "image=","envname=","envvalue=","yaml=","imagepullpolicy=",
-                                   "imagepullsecret=", "restartpolicy=", "backofflimit=", "hostpath=",
-                                   "volname=", "volpath=","commands=","args="])
+        opts, args = getopt.getopt(argv, "hj:c:i:e:v:y:p:s:r:b:H:m:t:q:a:k:",
+                                   ["jobname=", "claim=", "image=", "envname=", "envvalue=", "yaml=",
+                                    "imagepullpolicy=",
+                                    "imagepullsecret=", "restartpolicy=", "backofflimit=", "hostpath=",
+                                    "volname=", "volpath=", "volsubpath=", "commands=", "args="])
     except getopt.GetoptError:
-       usage()
-       sys.exit(1)
+        usage()
+        sys.exit(1)
     for opt, arg in opts:
-       if opt == '-h':
-          usage()
-          sys.exit(0)
-       elif opt in ("-e", "--envname"):
-          kVname.append(arg)
-       elif opt in ("-c", "--claim"):
-          kpvolclaim = arg
-       elif opt in ("-i", "--image"):
-          kImagename = arg
-       elif opt in ("-j", "--jobname"):
-          kJobname = arg
-       elif opt in ("-n", "--namespace"):
-          kNameSpace = arg
-       elif opt in ("-v", "--envvalue"):
-          kVvalue.append(arg)
-       elif opt in ("-y", "--yaml"):
-          kYaml = arg
-       elif opt in ("-b", "--backofflimit"):
-          kbackofflimit = int(arg)
-       elif opt in ("-p", "--imagepullpolicy"):
-          kimagepullpolicy = arg
-       elif opt in ("-r", "--restartpolicy"):
-          krestartpolicy = arg
-       elif opt in ("-s", "--imagepullsecret"):
-          kimagepullsecret = arg
-       elif opt in ("-H", "--hostpath"):
-          khostpath = arg
-       elif opt in ("-m", "--volname"):
-          kvolname = arg
-       elif opt in ("-k", "--commands"):
-          kcommands.append(arg)
-       elif opt in ("-a", "--args"):
-          kargs.append(arg)
+        if opt == '-h':
+            usage()
+            sys.exit(0)
+        elif opt in ("-e", "--envname"):
+            kVname.append(arg)
+        elif opt in ("-c", "--claim"):
+            kpvolclaim = arg
+        elif opt in ("-i", "--image"):
+            kImagename = arg
+        elif opt in ("-j", "--jobname"):
+            kJobname = arg
+        elif opt in ("-n", "--namespace"):
+            kNameSpace = arg
+        elif opt in ("-v", "--envvalue"):
+            kVvalue.append(arg)
+        elif opt in ("-y", "--yaml"):
+            kYaml = arg
+        elif opt in ("-b", "--backofflimit"):
+            kbackofflimit = int(arg)
+        elif opt in ("-p", "--imagepullpolicy"):
+            kimagepullpolicy = arg
+        elif opt in ("-r", "--restartpolicy"):
+            krestartpolicy = arg
+        elif opt in ("-s", "--imagepullsecret"):
+            kimagepullsecret = arg
+        elif opt in ("-H", "--hostpath"):
+            khostpath = arg
+        elif opt in ("-m", "--volname"):
+            kvolname = arg
+        elif opt in ("-t", "--volpath"):
+            kvolpath.append(arg)
+        elif opt in ("-q", "--volsubpath"):
+            kvolsubpath.append(arg)
+        elif opt in ("-k", "--commands"):
+            kcommands.append(arg)
+        elif opt in ("-a", "--args"):
+            kargs.append(arg)
 
     if kNameSpace == None:
         with open("/run/secrets/kubernetes.io/serviceaccount/namespace", 'r') as ns:
-          kNameSpace = ns.readlines()
+            kNameSpace = ns.readlines()
 
     used_opts(kJobname, kNameSpace, kYaml, kVname,
               kVvalue, kImagename, kimagepullpolicy,
               kimagepullsecret, krestartpolicy,
               kbackofflimit, khostpath,
-              kvolname, kvolpath,kpvolclaim, kcommands, kargs)
+              kvolname, kvolpath, kvolsubpath, kpvolclaim, kcommands, kargs)
 
     if kJobname == '' and kYaml == '':
-       usage()
-       sys.exit(2)
+        usage()
+        sys.exit(2)
     elif kJobname == '' and kYaml != '':
-       kJobname = get_job_name_from_ymal(kYaml)
+        kJobname = get_job_name_from_ymal(kYaml)
     elif kJobname != '' and kYaml != '':
-       ymlJobName = get_job_name_from_ymal(kYaml)
-       if (ymlJobName != kJobname):
-         print("jobname -j '%s' not equal to the jobname in the yaml file '%s'" % (kJobname, ymlJobName))
-         sys.exit(26)
+        ymlJobName = get_job_name_from_ymal(kYaml)
+        if (ymlJobName != kJobname):
+            print("jobname -j '%s' not equal to the jobname in the yaml file '%s'" % (kJobname, ymlJobName))
+            sys.exit(26)
 
-    #config.load_kube_config()
+    # config.load_kube_config()
     clientConf = client.Configuration()
     # assuming the script is running in pod:
     # token in: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -419,13 +436,13 @@ def main(argv):
     # api server: https://kubernetes.default
     # (true for all pods)
     with open('/var/run/secrets/kubernetes.io/serviceaccount/token') as f:
-      token = f.read()
+        token = f.read()
     clientConf.host = 'https://kubernetes.default'
     clientConf.api_key['authorization'] = token
     clientConf.api_key_prefix['authorization'] = 'Bearer'
     clientConf.ssl_ca_cert = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
     # can also use the default in-cluster way
-    #ApiClient client = ClientBuilder.cluster().build();
+    # ApiClient client = ClientBuilder.cluster().build();
 
     util_client = client.ApiClient(clientConf)
     batch_client = client.BatchV1Api(util_client)
@@ -433,38 +450,37 @@ def main(argv):
     job_exist = False
 
     try:
-      podName = listPod(core_client, kJobname)
-      # There can't be more than 1 deployment (kube job) with the same name
-      # do we want to delete ?
-      job_exist =  podName is not None
+        podName = listPod(core_client, kJobname)
+        # There can't be more than 1 deployment (kube job) with the same name
+        # do we want to delete ?
+        job_exist = podName is not None
     except ApiException as e:
-      print("Exception when calling BatchV1Api->read_namespaced_job_status: %s\n" % e)
-      sys.exit(16)
-
+        print("Exception when calling BatchV1Api->read_namespaced_job_status: %s\n" % e)
+        sys.exit(16)
 
     if not job_exist:
-      print("job not exist - creating (starting) job")
-      if kYaml != '':
-         print("Yaml specified. All other arguments - besides jobname - ignored")
-         startJob(util_client, batch_client, kJobname, kYaml)
-      else:
-         job = create_job_object(kJobname, kImagename, kVname, kVvalue, kimagepullpolicy, kimagepullsecret,
-                                 krestartpolicy, kbackofflimit, khostpath, kvolname, kvolpath, kpvolclaim, kcommands, kargs)
-         try:
-            createJob(batch_client, job)
-         except:
-            print("Job creation failed")
-            sys.exit(16)
+        print("job not exist - creating (starting) job")
+        if kYaml != '':
+            print("Yaml specified. All other arguments - besides jobname - ignored")
+            startJob(util_client, batch_client, kJobname, kYaml)
+        else:
+            job = create_job_object(kJobname, kImagename, kVname, kVvalue, kimagepullpolicy, kimagepullsecret,
+                                    krestartpolicy, kbackofflimit, khostpath, kvolname, kvolpath, kvolsubpath, kpvolclaim, kcommands,
+                                    kargs)
+            try:
+                createJob(batch_client, job)
+            except:
+                print("Job creation failed")
+                sys.exit(16)
     else:
-      print("job already exist - start monitoring")
+        print("job already exist - start monitoring")
 
-    #signal.signal(signal.SIGTERM, termSignal)
+    # signal.signal(signal.SIGTERM, termSignal)
     jobStatus, podsActive, podsSucceeded, podsFailed = status(batch_client, kJobname)
 
-
     if (podName is None):
-      # incase the job started (initial list returned none since the job didnt exist)
-      podName = listPod(core_client, kJobname)
+        # incase the job started (initial list returned none since the job didnt exist)
+        podName = listPod(core_client, kJobname)
 
     getLog(core_client, podName)
 

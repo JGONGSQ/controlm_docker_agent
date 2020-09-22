@@ -17,6 +17,7 @@ def main(argv):
     khostpath = 'none'
     kvolname = 'none'
     kvolpath = 'none'
+    kvolsubpath = 'none'
     kcommands = []
     kargs = []
 
@@ -38,11 +39,11 @@ def main(argv):
     #   y|yaml              name of a yaml manifest for job creation. Overrides all others except jobname
     #
     try:
-        opts, args = getopt.getopt(argv, "hj:c:i:e:v:y:p:s:r:b:H:m:t:a:k:",
+        opts, args = getopt.getopt(argv, "hj:c:i:e:v:y:p:s:r:b:H:m:t:q:a:k:",
                                    ["jobname=", "claim=", "image=", "envname=", "envvalue=", "yaml=",
                                     "imagepullpolicy=",
                                     "imagepullsecret=", "restartpolicy=", "backofflimit=", "hostpath=",
-                                    "volname=", "volpath=", "commands=", "args="])
+                                    "volname=", "volpath=", "volsubpath", "commands=", "args="])
     except getopt.GetoptError:
         # usage()
         sys.exit(1)
@@ -56,6 +57,9 @@ def main(argv):
             sys.exit(0)
         elif opt in ("-e", "--envname"):
             kVname.append(arg)
+            print(kVname)
+            for key in kVname:
+                print(key)
         elif opt in ("-c", "--claim"):
             kpvolclaim = arg
         elif opt in ("-i", "--image"):
